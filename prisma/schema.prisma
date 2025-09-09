@@ -1,0 +1,70 @@
+generator client {
+    provider = "prisma-client-js"
+}
+
+datasource db {
+    provider  = "postgresql"
+    url       = env("DATABASE_URL")
+    directUrl = env("DIRECT_URL")
+}
+
+enum OrderStatus {
+    PENDING
+    COMPLETED
+    CANCELED
+}
+
+enum ProductType {
+    FLOWER
+    BOUQUET
+}
+
+model Shop {
+    id       Int       @id @default(autoincrement())
+    name     String
+    location String
+    isActive Boolean   @default(true) // soft-delete flag
+    products Product[]
+    orders   Order[]
+}
+
+model Product {
+    id        Int         @id @default(autoincrement())
+    name      String
+    type      ProductType
+    price     Float
+    shopId    Int
+    imageUrl  String?
+    isActive  Boolean     @default(true) // soft-delete flag
+    shop      Shop        @relation(fields: [shopId], references: [id])
+    OrderItem OrderItem[]
+    createdAt DateTime    @default(now())
+}
+
+model Order {
+    id     Int         @id @default(autoincrement())
+    shopId Int
+    shop   Shop        @relation(fields: [shopId], references: [id])
+    items  OrderItem[]
+
+    customerName    String
+    customerEmail   String
+    customerPhone   String
+    customerAddress String
+
+    totalPrice Float
+    status     OrderStatus @default(PENDING)
+    createdAt  DateTime    @default(now())
+}
+
+model OrderItem {
+    id           Int         @id @default(autoincrement())
+    orderId      Int
+    order        Order       @relation(fields: [orderId], references: [id])
+    productId    Int
+    product      Product     @relation(fields: [productId], references: [id])
+    productName  String // snapshot of product name
+    productType  ProductType // snapshot of product type
+    productPrice Float // snapshot of price at order time
+    quantity     Int
+}
